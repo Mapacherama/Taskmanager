@@ -1,0 +1,12 @@
+@import '../../../main-styles.scss';
+.button {
+    .is-primary {
+        background-color: $primary;
+    }
+}
+
+.login-box {
+    padding: 35px;
+    background: white;
+    border-radius: 5px;
+}
