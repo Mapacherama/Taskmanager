@@ -49,9 +49,11 @@ body {
 
 .title {
     font-family: 'Lato';
+    color: $red;
     font-size: 24px;
     text-transform: uppercase;
     letter-spacing: 2px;
+    text-shadow: 2px 2px 4px #000000;
 }
 
 .white-box {
