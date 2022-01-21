@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
+// JWT Secret
+const jwtSecret = "vz15bmp2xbqw9gskrkew5ok35zp3v4zj0ywyrm4d7ty75ytck9a25mduo6pp";
+
 const UserSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -38,3 +41,42 @@ UserSchema.methods.toJSON = function() {
     // return the document except the password and sessions (these shouldn't be made available)
     return _.omit(userObject, ['password', 'sessions']);
 }
+
+UserSchema.methods.generateAccessAuthToken = function() {
+    const user = this;
+    return new Promise((resolve, reject) => {
+        // Create the JSON Web Token and return that
+        jwt.sign({ _id: user._id.toHexString() }, jwtSecret, { expiresIn: "15m" }, (err, token) => {
+            if (!err) {
+                resolve(token);
+            } else {
+                // there is an error
+                reject();
+            }
+        })
+    })
+}
+
+UserSchema.methods.generateRefreshAuthToken = function() {
+    // This method simply generates a 64byte hex string - it doesn't save it to the database. saveSessionToDatabase() does that.
+    return new Promise((resolve, reject) => {
+        crypto.randomBytes(64, (err, buf) => {
+            if (!err) {
+                // no error
+                let token = buf.toString('hex');
+
+                return resolve(token);
+            }
+        })
+    })
+}
+
+let generateRefreshTokenExpiryTime = () => {
+    let daysUntilExpire = "10";
+    let secondsUntilExpire = ((daysUntilExpire * 24) * 60) * 60;
+    return ((Date.now() / 1000) + secondsUntilExpire);
+}
+
+const User = mongoose.model('User', UserSchema);
+
+module.exports = { User }
