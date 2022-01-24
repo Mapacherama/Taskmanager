@@ -1,14 +1,13 @@
-import { Schema, model } from 'mongoose';
-import { omit } from 'lodash';
-import { sign } from 'jsonwebtoken';
-import { randomBytes } from 'crypto';
-import { compare, genSalt, hash as _hash } from 'bcryptjs';
-
+const mongoose = require('mongoose');
+const _ = require('lodash');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 // JWT Secret
 const jwtSecret = "51778657246321226641fsdklafjasdkljfsklfjd7148924065";
 
-const UserSchema = new Schema({
+const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
@@ -184,6 +183,6 @@ let generateRefreshTokenExpiryTime = () => {
     return ((Date.now() / 1000) + secondsUntilExpire);
 };
 
-const User = model('User', UserSchema);
+const User = mongoose.model('User', UserSchema);
 
-export default { User };
+module.exports = { User };
