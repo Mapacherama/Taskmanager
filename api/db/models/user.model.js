@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
+
 // JWT Secret
 const jwtSecret = "51778657246321226641fsdklafjasdkljfsklfjd7148924065";
 
@@ -40,37 +41,37 @@ UserSchema.methods.toJSON = function() {
     const userObject = user.toObject();
 
     // return the document except the password and sessions (these shouldn't be made available)
-    return omit(userObject, ['password', 'sessions']);
-};
+    return _.omit(userObject, ['password', 'sessions']);
+}
 
 UserSchema.methods.generateAccessAuthToken = function() {
     const user = this;
     return new Promise((resolve, reject) => {
         // Create the JSON Web Token and return that
-        sign({ _id: user._id.toHexString() }, jwtSecret, { expiresIn: "15m" }, (err, token) => {
+        jwt.sign({ _id: user._id.toHexString() }, jwtSecret, { expiresIn: "15m" }, (err, token) => {
             if (!err) {
                 resolve(token);
             } else {
                 // there is an error
                 reject();
             }
-        });
-    });
-};
+        })
+    })
+}
 
 UserSchema.methods.generateRefreshAuthToken = function() {
     // This method simply generates a 64byte hex string - it doesn't save it to the database. saveSessionToDatabase() does that.
     return new Promise((resolve, reject) => {
-        randomBytes(64, (err, buf) => {
+        crypto.randomBytes(64, (err, buf) => {
             if (!err) {
                 // no error
                 let token = buf.toString('hex');
 
                 return resolve(token);
             }
-        });
-    });
-};
+        })
+    })
+}
 
 UserSchema.methods.createSession = function() {
     let user = this;
@@ -83,8 +84,8 @@ UserSchema.methods.createSession = function() {
         return refreshToken;
     }).catch((e) => {
         return Promise.reject('Failed to save session to database.\n' + e);
-    });
-};
+    })
+}
 
 
 
@@ -92,7 +93,7 @@ UserSchema.methods.createSession = function() {
 
 UserSchema.statics.getJWTSecret = () => {
     return jwtSecret;
-};
+}
 
 
 
@@ -106,7 +107,7 @@ UserSchema.statics.findByIdAndToken = function(_id, token) {
         _id,
         'sessions.token': token
     });
-};
+}
 
 
 UserSchema.statics.findByCredentials = function(email, password) {
@@ -115,16 +116,16 @@ UserSchema.statics.findByCredentials = function(email, password) {
         if (!user) return Promise.reject();
 
         return new Promise((resolve, reject) => {
-            compare(password, user.password, (err, res) => {
+            bcrypt.compare(password, user.password, (err, res) => {
                 if (res) {
                     resolve(user);
                 } else {
                     reject();
                 }
-            });
-        });
-    });
-};
+            })
+        })
+    })
+}
 
 UserSchema.statics.hasRefreshTokenExpired = (expiresAt) => {
     let secondsSinceEpoch = Date.now() / 1000;
@@ -135,7 +136,7 @@ UserSchema.statics.hasRefreshTokenExpired = (expiresAt) => {
         // has expired
         return true;
     }
-};
+}
 
 
 /* MIDDLEWARE */
@@ -148,12 +149,12 @@ UserSchema.pre('save', function(next) {
         // if the password field has been edited/changed then run this code.
 
         // Generate salt and hash password
-        genSalt(costFactor, (err, salt) => {
-            _hash(user.password, salt, (err, hash) => {
+        bcrypt.genSalt(costFactor, (err, salt) => {
+            bcrypt.hash(user.password, salt, (err, hash) => {
                 user.password = hash;
                 next();
-            });
-        });
+            })
+        })
     } else {
         next();
     }
@@ -174,15 +175,15 @@ let saveSessionToDatabase = (user, refreshToken) => {
         }).catch((e) => {
             reject(e);
         });
-    });
-};
+    })
+}
 
 let generateRefreshTokenExpiryTime = () => {
     let daysUntilExpire = "10";
     let secondsUntilExpire = ((daysUntilExpire * 24) * 60) * 60;
     return ((Date.now() / 1000) + secondsUntilExpire);
-};
+}
 
 const User = mongoose.model('User', UserSchema);
 
-module.exports = { User };
+module.exports = { User }
